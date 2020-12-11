@@ -1,5 +1,4 @@
 import ast
-import q
 
 class Counter(ast.NodeVisitor):
 
