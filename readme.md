@@ -52,5 +52,15 @@ deviation), and of course what the shape of the distribution is.
 
 # References
 
-Blog post by Viktor Tóth "Entropy of abstract syntax trees", which is a
-mathematical quantification of how repetitive the code is.
+Blog post by Viktor Tóth "Entropy of abstract syntax trees", which is
+a mathematical quantification of how repetitive the code is. Cyclomatic
+complexity is referenced there, but that is a measure of how the
+program operates, not just simpler measures such as how many types of
+a statement it has. Halstead complexity measures are a general class
+of complexity measures, but again they measure complexity, not just
+stylistic choice such as importing with or without aliases. 
+
+The python package radon computes these metrics, and common linters,
+such as flake8 for python, include such metric calculators. See, for
+example, the cyclomatic complexity (=McCabe complexity) script at
+https://github.com/PyCQA/mccabe included in flake8.
