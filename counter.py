@@ -26,6 +26,8 @@ class Counter(ast.NodeVisitor):
         self.nfuncs = 0
         self.ndecorators = 0
 
+        self.names = []
+
     # I couldn't find a way to dynamically create these methods
     # the problem is the instance passed to the function, if using setattr to set a method
     # will not modify the instance outside the scope of the function
@@ -113,7 +115,7 @@ class Counter(ast.NodeVisitor):
     # the following collect information at the base level
     # methods on parent nodes would have to be defined to know the parents of name leaves (the most common leaf)
     def visit_Name(self, node):
-        self.l.append(('Name', node.id))
+        self.names.append(node.id)
         self._(node)
 
     def visit_alias(self, node):
@@ -342,6 +344,22 @@ class Counter(ast.NodeVisitor):
     def classsize(self):
         try:
             return self.functiondef_in_classdef / self.nclasses
+        except ZeroDivisionError:
+            return None
+
+    @property
+    def nameslengths(self):
+        try:
+            return sum(len(x) for x in self.names) / len(self.names)
+        except ZeroDivisionError:
+            return None
+
+    # distributions
+    @property # idea from Ka-Ping Lee who named his logging package q since it was the least used letter in the alphabet
+    def namesalphdistr(self):
+        try:
+            chars = ''.join(x.lower() for x in self.names)
+            return [chars.count(i)/len(chars) for i in 'abcdefghijklmnopqrstuvwxyz']
         except ZeroDivisionError:
             return None
 

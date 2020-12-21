@@ -41,6 +41,8 @@ print(f'kwarg defaultness {mv.defaultness:.2f}')
 print(f'statictypeness {mv.statictypeness:.2f}')
 print(f'expression nestedness {mv.nestedness:.1f}')
 print(f'average number of methods in class {mv.classsize:.1f}')
+print(f'average character length of a name {mv.nameslengths:.1f}')
+print(f'a-z character distribution {[round(x*100) for x in mv.namesalphdistr]}')
 
 # an alternative to defining so many count methods in a visitor class:
 #d = mv.make_dict(module)
