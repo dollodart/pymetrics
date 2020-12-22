@@ -119,12 +119,9 @@ class Counter(ast.NodeVisitor):
         self._(node)
 
     def visit_alias(self, node):
-        self.l.append(('AliasName', node.name))
-        self.l.append(('AliasAlias', node.asname))
         self._(node)
 
     def visit_Attr(self, node):
-        self.l.append(('Attr', node.attr))
         self._(node)
 
     def visit_Assign(self, node):
@@ -140,17 +137,14 @@ class Counter(ast.NodeVisitor):
         self._(node)
 
     def visit_FunctionDef(self, node):
-        self.l.append(('FunctionDef', node.name))
         self.nfuncs += 1
         self.ndecorators += len(node.decorator_list)
         self._(node)
 
     def visit_keyword(self, node):
-        self.l.append(('keyword', node.arg))
         self._(node)
 
     def visit_ClassDef(self, node):
-        self.l.append(('ClassDef', node.name))
         self.ndecorators += len(node.decorator_list)
         self.nclasses += 1
         for i in ast.walk(node):
@@ -159,12 +153,10 @@ class Counter(ast.NodeVisitor):
         self._(node)
 
     def visit_Global(self, node):
-        self.l.extend([('Global', x) for x in node.names])
         self.globals += len(node.names)
         self._(node)
 
     def visit_Nonlocal(self, node):
-        self.l.extend([('Local', x) for x in node.names])
         self.nonlocals += len(node.names)
         self._(node)
 
