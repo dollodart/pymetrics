@@ -62,6 +62,7 @@ class Counter(ast.NodeVisitor):
             setattr(self, i, 0)
 
         self.functiondef_in_classdef = 0
+        self.functiondef_in_functiondef = 0
         self.nclasses = 0
         self.nfuncs = 0
         self.ndecorators = 0
@@ -181,6 +182,10 @@ class Counter(ast.NodeVisitor):
     def visit_FunctionDef(self, node):
         self.nfuncs += 1
         self.ndecorators += len(node.decorator_list)
+        for i in ast.walk(node):
+            if type(i) == ast.FunctionDef:
+                self.functiondef_in_functiondef += 1
+        self.functiondef_in_functiondef -= 1 # this is to remove the first function definition in the walk (root node)
         self._(node)
 
     def visit_keyword(self, node):
@@ -354,6 +359,13 @@ class Counter(ast.NodeVisitor):
             return None
 
     @property
+    def functionnestedness(self):
+        try:
+            return self.functiondef_in_functiondef / self.nfuncs
+        except ZeroDivisionError:
+            return None
+
+    @property
     def classsize(self):
         try:
             return self.functiondef_in_classdef / self.nclasses
@@ -375,4 +387,3 @@ class Counter(ast.NodeVisitor):
             return [chars.count(i)/len(chars) for i in 'abcdefghijklmnopqrstuvwxyz']
         except ZeroDivisionError:
             return None
-
