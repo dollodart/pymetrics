@@ -50,6 +50,17 @@ Of course, anytime a question regarding a statistic like the mean is
 asked, one can also ask about other statistics (like the standard
 deviation), and of course what the shape of the distribution is.
 
+Finally, there may be a desire to compute pairwise comparisons between
+objects which are not in the same subtree (other than trivially
+the subtree of the module root). Example questions of interest are
+
+- how distinct are the variable names (average length of longest common subsequence between each pair divided by average name length)?
+
+Generally this requires memory of all nodes without structure, except
+grouped by their class since most comparisons will be intraclass. This
+is done by making a dictionary with keys of node type and a list of
+nodes belonging to that type.
+
 # References
 
 Blog post by Viktor Tóth "Entropy of abstract syntax trees", which is

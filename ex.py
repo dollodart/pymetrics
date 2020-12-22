@@ -44,12 +44,8 @@ print(f'average number of methods in class {mv.classsize:.1f}')
 print(f'average character length of a name {mv.nameslengths:.1f}')
 print(f'a-z character distribution {[round(x*100) for x in mv.namesalphdistr]}')
 
-# an alternative to defining so many count methods in a visitor class:
-#d = mv.make_dict(module)
-#d2 = sorted([(k, len(v)) for k, v in d.items()], key = lambda x:x[1])
-#print(d2)
-#for i in d[ast.Expr]: # iterate through only nodes of a certain class
-#    ...
+nd = mv.make_node_dict(module)
+print(f'node distinctness {nd.namesdistinctness:.2f}')
 
 import matplotlib.pyplot as plt
 y1, y2, y3, x = zip(*xy)

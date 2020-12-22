@@ -1,4 +1,44 @@
 import ast
+def lcs_length(x,y):
+    """See CLRS section 15.4"""
+    m = len(x) 
+    n = len(y)
+    c = [[0]*n]*m
+    for i in range(1, m):
+        c[i][0] = 0
+    for j in range(n):
+        c[0][j] = 0
+
+    for i in range(1, m):
+        for j in range(1, n):
+            if x[i] == y[j]:
+                c[i][j] = c[i-1][j-1] + 1
+            elif c[i-1][j] >= c[i][j-1]:
+                c[i][j] = c[i-1][j]
+            else:
+                c[i][j] = c[i][j-1]
+    return c[m-1][n-1]
+
+# test case
+if __name__ == '__main__':
+    l = lcs_length('bdcaba', 'abcdbdab')
+    print(l)
+
+
+class NodeDict(dict):
+    @property
+    def namesdistinctness(self):
+        names = self[ast.Name]
+        n = len(names)
+        l = 0
+        ll = 0
+        for i in range(n):
+            for j in range(i):
+                n1 = names[i].id
+                n2 = names[j].id
+                l += 2*lcs_length(n1, n2)
+                ll += len(n1) + len(n2)
+        return l / ll
 
 class Counter(ast.NodeVisitor):
 
@@ -32,16 +72,18 @@ class Counter(ast.NodeVisitor):
     # the problem is the instance passed to the function, if using setattr to set a method
     # will not modify the instance outside the scope of the function
 
-    def make_dict(self, node):
+    def make_node_dict(self, node):
         """Return a dictionary of nodes by class (removes all structure)."""
-        dct = {node.__class__: [node]}
+
+        self.node_dict = NodeDict()
+        self.node_dict[node.__class__] = [node]
         for i in ast.walk(node):
             c = i.__class__
-            if c in dct.keys():
-                dct[c].append(i)
+            if c in self.node_dict.keys():
+                self.node_dict[c].append(i)
             else:
-                dct[c] = [i]
-        return dct
+                self.node_dict[c] = [i]
+        return self.node_dict
 
     def _(self, node):
         self.n += 1
