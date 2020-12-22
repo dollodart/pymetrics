@@ -344,27 +344,6 @@ class Counter(ast.NodeVisitor):
             return self.annassigns / (self.assigns + self.augassigns + self.annassigns)
         except ZeroDivisionError:
             return None
-    # counts of classes non-atomic (returns list)
-
-    @property
-    def occurances_type(self):
-        d = {}
-        for p, v in self.l:
-            if p in d.keys():
-                d[p] += 1
-            else:
-                d[p] = 1
-        return sorted(d.items(), key = lambda x:x[1])
-
-    @property
-    def occurances_varname(self):
-        d = {}
-        for p, v in self.l:
-            if v in d.keys():
-                d[v] += 1
-            else:
-                d[v] = 1
-        return sorted(d.items(), key = lambda x:x[1])
 
     # statistics
     @property

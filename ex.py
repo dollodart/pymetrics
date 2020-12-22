@@ -26,12 +26,6 @@ for f in Path('./ase/optimize').glob('**/*'):
     xy.append((nlines, nchars, nwords, mv.n))
 
 print(f'count comparators={mv.comparators}')
-for typ, occ in mv.occurances_type:
-    print(typ, occ, end='|')
-print()
-for vn, occ in mv.occurances_varname:
-    print(vn, occ, end='|')
-print()
 print(f'comprehensioness {mv.comprehensioness:.2f}')
 print(f'decoratedness {mv.statictypeness:.2f}')
 print(f'descopedness {mv.descopedness:.2f}')
