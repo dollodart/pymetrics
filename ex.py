@@ -22,7 +22,7 @@ for f in Path('./ase/optimize').glob('**/*'):
     nwords = re.sub('\n\s*', '', r).count(' ') # rough approximation of words
     
     module = ast.parse(r)
-    mv.generic_visit(module)
+    mv.count_visit(module)
     xy.append((nlines, nchars, nwords, mv.n))
 
 print(f'count comparators={mv.comparators}')

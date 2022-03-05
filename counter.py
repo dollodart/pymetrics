@@ -44,6 +44,8 @@ class Counter(ast.NodeVisitor):
 
     def __init__(self):
         super().__init__()
+        self.subtrees = []
+
         self.l = []
 
         self.n = 0
@@ -72,6 +74,21 @@ class Counter(ast.NodeVisitor):
     # I couldn't find a way to dynamically create these methods
     # the problem is the instance passed to the function, if using setattr to set a method
     # will not modify the instance outside the scope of the function
+
+    def merge(self, other):
+        d = other.__dict__
+        for k in d:
+            setattr(self, k, getattr(self, k) + d[k])
+            # this should work for list appending and floats or ints because of + polymorphism
+
+    def postwalk_merge(self):
+        for st in self.subtrees:
+            st.postwalk_merge()
+            self.merge(st)
+
+    def count_visit(self, module):
+        self.generic_visit(module)
+        self.postwalk_merge()
 
     def make_node_dict(self, node):
         """Return a dictionary of nodes by class (removes all structure)."""
@@ -185,7 +202,7 @@ class Counter(ast.NodeVisitor):
         sc = Counter()
         sc.generic_visit(node)
         self.functiondef_in_functiondef += sc.nfuncs - 1
-        self._(node)
+        self.subtrees.append(sc)
 
     def visit_keyword(self, node):
         self._(node)
@@ -196,7 +213,7 @@ class Counter(ast.NodeVisitor):
         sc = Counter()
         sc.generic_visit(node)
         self.functiondef_in_classdef += sc.nfuncs - 1
-        self._(node)
+        self.subtrees.append(sc)
 
     def visit_Global(self, node):
         self.globals += len(node.names)
@@ -231,7 +248,7 @@ class Counter(ast.NodeVisitor):
         sc = Counter()
         sc.generic_visit(node)
         self.expression_lengths.append(sc.n)
-        self._(node)
+        self.subtrees.append(sc)
 
     def visit_Import(self, node):
         self.imports += 1
