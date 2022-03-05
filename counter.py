@@ -182,10 +182,9 @@ class Counter(ast.NodeVisitor):
     def visit_FunctionDef(self, node):
         self.nfuncs += 1
         self.ndecorators += len(node.decorator_list)
-        for i in ast.walk(node):
-            if type(i) == ast.FunctionDef:
-                self.functiondef_in_functiondef += 1
-        self.functiondef_in_functiondef -= 1 # this is to remove the first function definition in the walk (root node)
+        sc = Counter()
+        sc.generic_visit(node)
+        self.functiondef_in_functiondef += sc.nfuncs - 1
         self._(node)
 
     def visit_keyword(self, node):
@@ -194,9 +193,9 @@ class Counter(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         self.ndecorators += len(node.decorator_list)
         self.nclasses += 1
-        for i in ast.walk(node):
-            if type(i) == ast.FunctionDef:
-                self.functiondef_in_classdef += 1
+        sc = Counter()
+        sc.generic_visit(node)
+        self.functiondef_in_classdef += sc.nfuncs - 1
         self._(node)
 
     def visit_Global(self, node):
@@ -229,9 +228,9 @@ class Counter(ast.NodeVisitor):
 
     def visit_Expr(self, node):
         count = 0
-        for i in ast.walk(node):
-            count += 1
-        self.expression_lengths.append(count)
+        sc = Counter()
+        sc.generic_visit(node)
+        self.expression_lengths.append(sc.n)
         self._(node)
 
     def visit_Import(self, node):
