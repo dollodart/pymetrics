@@ -1,4 +1,6 @@
 import ast
+from math import nan
+
 def lcs_length(x,y):
     """See CLRS section 15.4"""
     m = len(x) 
@@ -89,6 +91,19 @@ class Counter(ast.NodeVisitor):
     def count_visit(self, module):
         self.generic_visit(module)
         self.postwalk_merge()
+
+    def root_visit(self, node):
+        # visit method for subtree roots 
+        try:
+            g = node.body
+        except AttributeError:
+            g = node.value
+
+        try:
+            for el in g:
+                self.generic_visit(el)
+        except TypeError:
+            self.generic_visit(g) # g is not a generator but an element
 
     def make_node_dict(self, node):
         """Return a dictionary of nodes by class (removes all structure)."""
@@ -200,8 +215,8 @@ class Counter(ast.NodeVisitor):
         self.nfuncs += 1
         self.ndecorators += len(node.decorator_list)
         sc = Counter()
-        sc.generic_visit(node)
-        self.functiondef_in_functiondef += sc.nfuncs - 1
+        sc.root_visit(node)
+        self.functiondef_in_functiondef += sc.nfuncs
         self.subtrees.append(sc)
 
     def visit_keyword(self, node):
@@ -211,8 +226,8 @@ class Counter(ast.NodeVisitor):
         self.ndecorators += len(node.decorator_list)
         self.nclasses += 1
         sc = Counter()
-        sc.generic_visit(node)
-        self.functiondef_in_classdef += sc.nfuncs - 1
+        sc.root_visit(node)
+        self.functiondef_in_classdef += sc.nfuncs
         self.subtrees.append(sc)
 
     def visit_Global(self, node):
@@ -246,7 +261,7 @@ class Counter(ast.NodeVisitor):
     def visit_Expr(self, node):
         count = 0
         sc = Counter()
-        sc.generic_visit(node)
+        sc.root_visit(node)
         self.expression_lengths.append(sc.n)
         self.subtrees.append(sc)
 
@@ -342,7 +357,7 @@ class Counter(ast.NodeVisitor):
             return (self.imports_aliased + self.fromimports_aliased) /\
                    (self.imports_asis + self.imports_aliased + self.fromimports_aliased + self.fromimports_asis)
         except ZeroDivisionError:
-            return None
+            return nan
 
     @property
     def comprehensioness(self):
@@ -350,21 +365,21 @@ class Counter(ast.NodeVisitor):
         try: 
             return self.comprehensions / (self.comprehensions + self.loops)
         except ZeroDivisionError:
-            return None
+            return nan
 
     @property
     def defaultness(self):
         try:
             return self.ndefaults / self.nargs 
         except ZeroDivisionError:
-            return None
+            return nan
 
     @property
     def statictypeness(self):
         try:
             return self.annassigns / (self.assigns + self.augassigns + self.annassigns)
         except ZeroDivisionError:
-            return None
+            return nan
 
     # statistics
     @property
@@ -372,28 +387,28 @@ class Counter(ast.NodeVisitor):
         try:
             return sum(self.expression_lengths) / len(self.expression_lengths)
         except ZeroDivisionError:
-            return None
+            return nan
 
     @property
     def functionnestedness(self):
         try:
             return self.functiondef_in_functiondef / self.nfuncs
         except ZeroDivisionError:
-            return None
+            return nan
 
     @property
     def classsize(self):
         try:
             return self.functiondef_in_classdef / self.nclasses
         except ZeroDivisionError:
-            return None
+            return nan
 
     @property
     def nameslengths(self):
         try:
             return sum(len(x) for x in self.names) / len(self.names)
         except ZeroDivisionError:
-            return None
+            return nan
 
     # distributions
     @property # idea from Ka-Ping Lee who named his logging package q since it was the least used letter in the alphabet
@@ -402,4 +417,4 @@ class Counter(ast.NodeVisitor):
             chars = ''.join(x.lower() for x in self.names)
             return [chars.count(i)/len(chars) for i in 'abcdefghijklmnopqrstuvwxyz']
         except ZeroDivisionError:
-            return None
+            return nan

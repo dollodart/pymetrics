@@ -7,7 +7,7 @@ d = {}
 
 xy = []
 mv = Counter()
-for f in Path('./ase/optimize').glob('**/*'):
+for f in Path('./ase/optimize/gpmin').glob('**/*'):
     if f.suffix != '.py':
         continue
     with open(f, 'r') as _:
