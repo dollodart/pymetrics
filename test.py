@@ -1,4 +1,5 @@
 from counter import FastCounter, RecursiveCounter
+from auxcl import NodeDict
 from pathlib import Path
 import re
 import ast
@@ -31,48 +32,88 @@ def plot_dist(nlines, nchars, nwords, nnodes):
     axs[2].set_xlabel('Nwords')
     plt.show()
 
-# TODO: test node_dict
-#def flattened_report(module):
-#    nd = mv.make_node_dict(module)
-#    print(f'node distinctness {nd.namesdistinctness:.2f}')
-
-def test_counter(mv, path):
-    d = {}
-    xy = []
+def dirstream(path, filters = tuple()):
+    """
+    This loads all of the modules in the path into memory. This is because
+    tests may want to run independently, but is memory inefficient compared to
+    evaluating all tests on a single walk through the dir stream and keeping
+    only one file in memory at any time.
+    """
     p = Path(path)
     if p.is_dir():
         g = p.glob('**/*')
     else:
         g = (p,)
 
+    rr = []
     for f in g:
         if f.suffix != '.py':
             continue
-        with open(f, 'r') as _:
-            r = _.read()
-        
-        # these can be compared with counts found from parsing
-        # should be roughly correlated
-        f = str(f)
+        for filter in filters:
+            if not filter(f):
+                continue
 
+        try:
+            with open(f, 'r') as _:
+                r = _.read()
+            rr.append(r)
+        except Exception as e:
+            print('module failed to load')
+            print(e)
+
+    return rr
+
+def parsestream(path, filters = tuple()): 
+    return [ast.parse(r) for r in dirstream(path, filters)]
+
+def wc(rr):
+    xy = []
+    for r in rr:
         nlines = r.count('\n')
         nchars = len(r)
         nwords = re.sub('\n\s*', '', r).count(' ') # rough approximation of words
-        xy.append((nlines, nchars, nwords, mv.n))
-        
-        module = ast.parse(r)
-        mv.generic_visit(module)
+        xy.append((nlines, nchars, nwords))
     return zip(*xy)
 
-if __name__ == '__main__':
-    mv = FastCounter()
-    nlines, nchars, nwords, nnodes = test_counter(mv, './ase/optimize')
-    table_report(mv)
-    plot_dist(nlines, nchars, nwords, nnodes)
 
-    ts = './ase/optimize/neb.py'
+if __name__ == '__main__':
+    rr = dirstream('./ase/optimize')
+    rrm = [ast.parse(r) for r in rr]
+
+    # fc test
+    mv = FastCounter()
+    mvs = []
+    for mod in rrm:
+        mv.generic_visit(mod)
+        mvs.append(FastCounter())
+        mvs[-1].generic_visit(mod)
+
+    table_report(mv)
+
+    # run a distribution w.r.t. module
+
+    nlines, nchars, nwords = wc(rr)
+    plot_dist(nlines, nchars, nwords, [mv.n for mv in mvs])
+
+    # ndict test
+    ndict = NodeDict()
+    for rr in rrm:
+        ndict.accumulate(mod)
+    #print(ndict.namesdistinctness) # slow
+
+    # rc test
+    rr2 = dirstream('./ase/optimize/neb.py')
     mv = RecursiveCounter()
-    #nlines, nchars, nwords, nnodes = test_counter(mv, './ase/optimize/neb.py')
+    mv.generic_visit(ast.parse(rr2[0]))
+
+    # this isn't the value in Recursive Counter
     mv.postwalk_merge()
     table_report(mv)
-    #plot_dist(nlines, nchars, nwords, nnodes)
+
+    # a distribution of subtree statistics is of value (though it requires a similar merging procedure)
+    l = []
+    def recur_n(mv):
+        l.append(mv.n)
+        for st in mv.subtrees:
+            recur_n(st)
+    print(sorted(l))

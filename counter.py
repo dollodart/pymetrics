@@ -7,7 +7,6 @@ class Counter(ast.NodeVisitor):
 
     def __init__(self):
         super().__init__()
-        self.subtrees = []
 
         self.l = []
 
@@ -324,6 +323,9 @@ class RecursiveCounter(Counter):
     Counter objects have many fields. This Counter should be used for
     evaluating distributions of subtree statistics. The merge is expensive.
     """
+    def __init__(self):
+        super().__init__()
+        self.subtrees = []
 
     def merge(self, other):
         d = other.__dict__

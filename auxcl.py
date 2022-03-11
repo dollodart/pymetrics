@@ -16,7 +16,7 @@ class NodeDict(dict):
                 ll += len(n1) + len(n2)
         return l / ll
 
-    def from_root(self, node):
+    def accumulate(self, node):
         """Return a dictionary of nodes by class (removes all structure)."""
 
         self[node.__class__] = [node]
