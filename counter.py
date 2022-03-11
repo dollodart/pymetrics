@@ -38,19 +38,6 @@ class Counter(ast.NodeVisitor):
         self.n += 1
         self.generic_visit(node)
 
-    def make_node_dict(self, node):
-        """Return a dictionary of nodes by class (removes all structure)."""
-
-        self.node_dict = NodeDict()
-        self.node_dict[node.__class__] = [node]
-        for i in ast.walk(node):
-            c = i.__class__
-            if c in self.node_dict.keys():
-                self.node_dict[c].append(i)
-            else:
-                self.node_dict[c] = [i]
-        return self.node_dict
-
     # I couldn't find a way to dynamically create these methods
     # the problem is the instance passed to the function, if using setattr to set a method
     # will not modify the instance outside the scope of the function

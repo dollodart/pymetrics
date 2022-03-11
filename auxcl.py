@@ -15,3 +15,16 @@ class NodeDict(dict):
                 l += 2*lcs_length(n1, n2)
                 ll += len(n1) + len(n2)
         return l / ll
+
+    def from_root(self, node):
+        """Return a dictionary of nodes by class (removes all structure)."""
+
+        self[node.__class__] = [node]
+        for i in ast.walk(node):
+            c = i.__class__
+            if c in self.keys():
+                self[c].append(i)
+            else:
+                self[c] = [i]
+        return self
+
