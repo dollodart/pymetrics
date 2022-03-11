@@ -1,46 +1,7 @@
 import ast
 from math import nan
-
-def lcs_length(x,y):
-    """See CLRS section 15.4"""
-    m = len(x) 
-    n = len(y)
-    c = [[0]*n]*m
-    for i in range(1, m):
-        c[i][0] = 0
-    for j in range(n):
-        c[0][j] = 0
-
-    for i in range(1, m):
-        for j in range(1, n):
-            if x[i] == y[j]:
-                c[i][j] = c[i-1][j-1] + 1
-            elif c[i-1][j] >= c[i][j-1]:
-                c[i][j] = c[i-1][j]
-            else:
-                c[i][j] = c[i][j-1]
-    return c[m-1][n-1]
-
-# test case
-if __name__ == '__main__':
-    l = lcs_length('bdcaba', 'abcdbdab')
-    print(l)
-
-
-class NodeDict(dict):
-    @property
-    def namesdistinctness(self):
-        names = self[ast.Name]
-        n = len(names)
-        l = 0
-        ll = 0
-        for i in range(n):
-            for j in range(i):
-                n1 = names[i].id
-                n2 = names[j].id
-                l += 2*lcs_length(n1, n2)
-                ll += len(n1) + len(n2)
-        return l / ll
+from algs import lcs_length
+from auxcl import NodeDict
 
 class Counter(ast.NodeVisitor):
 
@@ -73,37 +34,9 @@ class Counter(ast.NodeVisitor):
 
         self.names = []
 
-    # I couldn't find a way to dynamically create these methods
-    # the problem is the instance passed to the function, if using setattr to set a method
-    # will not modify the instance outside the scope of the function
-
-    def merge(self, other):
-        d = other.__dict__
-        for k in d:
-            setattr(self, k, getattr(self, k) + d[k])
-            # this should work for list appending and floats or ints because of + polymorphism
-
-    def postwalk_merge(self):
-        for st in self.subtrees:
-            st.postwalk_merge()
-            self.merge(st)
-
-    def count_visit(self, module):
-        self.generic_visit(module)
-        self.postwalk_merge()
-
-    def root_visit(self, node):
-        # visit method for subtree roots 
-        try:
-            g = node.body
-        except AttributeError:
-            g = node.value
-
-        try:
-            for el in g:
-                self.generic_visit(el)
-        except TypeError:
-            self.generic_visit(g) # g is not a generator but an element
+    def _(self, node):
+        self.n += 1
+        self.generic_visit(node)
 
     def make_node_dict(self, node):
         """Return a dictionary of nodes by class (removes all structure)."""
@@ -118,9 +51,9 @@ class Counter(ast.NodeVisitor):
                 self.node_dict[c] = [i]
         return self.node_dict
 
-    def _(self, node):
-        self.n += 1
-        self.generic_visit(node)
+    # I couldn't find a way to dynamically create these methods
+    # the problem is the instance passed to the function, if using setattr to set a method
+    # will not modify the instance outside the scope of the function
 
     # Binary Operators
     def visit_Add(self, node):
@@ -211,24 +144,8 @@ class Counter(ast.NodeVisitor):
         self.annassigns += 1
         self._(node)
 
-    def visit_FunctionDef(self, node):
-        self.nfuncs += 1
-        self.ndecorators += len(node.decorator_list)
-        sc = Counter()
-        sc.root_visit(node)
-        self.functiondef_in_functiondef += sc.nfuncs
-        self.subtrees.append(sc)
-
     def visit_keyword(self, node):
         self._(node)
-
-    def visit_ClassDef(self, node):
-        self.ndecorators += len(node.decorator_list)
-        self.nclasses += 1
-        sc = Counter()
-        sc.root_visit(node)
-        self.functiondef_in_classdef += sc.nfuncs
-        self.subtrees.append(sc)
 
     def visit_Global(self, node):
         self.globals += len(node.names)
@@ -258,12 +175,6 @@ class Counter(ast.NodeVisitor):
         self.tries += 1
         self._(node)
 
-    def visit_Expr(self, node):
-        count = 0
-        sc = Counter()
-        sc.root_visit(node)
-        self.expression_lengths.append(sc.n)
-        self.subtrees.append(sc)
 
     def visit_Import(self, node):
         self.imports += 1
@@ -418,3 +329,84 @@ class Counter(ast.NodeVisitor):
             return [chars.count(i)/len(chars) for i in 'abcdefghijklmnopqrstuvwxyz']
         except ZeroDivisionError:
             return nan
+
+class RecursiveCounter(Counter):
+    """
+    Recursive counter instantiates an instance of itself when encountering
+    certain nodes. This instantiation may cost memory given the fact that
+    Counter objects have many fields. This Counter should be used for
+    evaluating distributions of subtree statistics. The merge is expensive.
+    """
+
+    def merge(self, other):
+        d = other.__dict__
+        for k in d:
+            setattr(self, k, getattr(self, k) + d[k])
+            # this should work for list appending and floats or ints because of + polymorphism
+
+    def postwalk_merge(self):
+        for st in self.subtrees:
+            st.postwalk_merge()
+            self.merge(st)
+
+    def count_visit(self, module):
+        self.generic_visit(module)
+        self.postwalk_merge()
+
+    def root_visit(self, node):
+        # visit method for subtree roots 
+        try:
+            g = node.body
+        except AttributeError:
+            g = node.value
+
+        try:
+            for el in g:
+                self.generic_visit(el)
+        except TypeError:
+            self.generic_visit(g) # g is not a generator but an element
+
+    def visit_FunctionDef(self, node):
+        self.nfuncs += 1
+        self.ndecorators += len(node.decorator_list)
+        sc = self.__class__()
+        sc.root_visit(node)
+        self.functiondef_in_functiondef += sc.nfuncs
+        self.subtrees.append(sc)
+
+    def visit_ClassDef(self, node):
+        self.ndecorators += len(node.decorator_list)
+        self.nclasses += 1
+        sc = self.__class__()
+        sc.root_visit(node)
+        self.functiondef_in_classdef += sc.nfuncs
+        self.subtrees.append(sc)
+
+    def visit_Expr(self, node):
+        sc = self.__class__()
+        sc.root_visit(node)
+        self.expression_lengths.append(sc.n)
+        self.subtrees.append(sc)
+
+class FastCounter(Counter):
+    """
+    Fast counter doesn't keep the substructure, nor does it descend beyond the
+    first level.
+    """
+
+    def visit_FunctionDef(self, node):
+        self.nfuncs += 1
+        self.ndecorators += len(node.decorator_list)
+
+    def visit_ClassDef(self, node):
+        self.ndecorators += len(node.decorator_list)
+        self.nclasses += 1
+
+    def visit_Expr(self, node):
+        # this is a bad estimate because, e.g., a binary operator will make it
+        # appear as length 1. you need to descend into the parse tree to get
+        # expression lengths in terms of atoms. 
+        try:
+            self.expression_lengths.append(len(node.value))
+        except TypeError:
+            pass

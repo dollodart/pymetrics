@@ -1,4 +1,4 @@
-from counter import Counter
+from counter import FastCounter, RecursiveCounter
 from pathlib import Path
 import re
 import ast
@@ -6,8 +6,8 @@ import ast
 d = {}
 
 xy = []
-mv = Counter()
-for f in Path('./ase/optimize/gpmin').glob('**/*'):
+mv = FastCounter()
+for f in Path('./ase/optimize').glob('**/*'):
     if f.suffix != '.py':
         continue
     with open(f, 'r') as _:
@@ -22,7 +22,7 @@ for f in Path('./ase/optimize/gpmin').glob('**/*'):
     nwords = re.sub('\n\s*', '', r).count(' ') # rough approximation of words
     
     module = ast.parse(r)
-    mv.count_visit(module)
+    mv.generic_visit(module)
     xy.append((nlines, nchars, nwords, mv.n))
 
 print(f'count comparators={mv.comparators}')
