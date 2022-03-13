@@ -76,6 +76,9 @@ def wc(rr):
     return zip(*xy)
 
 
+from radon.visitors import HalsteadVisitor
+from time import time
+
 if __name__ == '__main__':
     rr = dirstream('./ase/optimize')
     rrm = [ast.parse(r) for r in rr]
@@ -83,12 +86,22 @@ if __name__ == '__main__':
     # fc test
     mv = FastCounter()
     mvs = []
+    t0 = time()
     for mod in rrm:
         mv.generic_visit(mod)
         mvs.append(FastCounter())
         mvs[-1].generic_visit(mod)
+    print(f'FastCounter dt = {time() - t0:.3f} {len(rrm)} module test')
 
+    print('-'*72)
     table_report(mv)
+    print('-'*72)
+
+    t0 = time()
+    hv = HalsteadVisitor()
+    for mod in rrm:
+        hv.generic_visit(mod)
+    print(f'HalsteadVisitor dt = {time() - t0:.3f} {len(rrm)} module test')
 
     # run a distribution w.r.t. module
 
@@ -97,18 +110,24 @@ if __name__ == '__main__':
 
     # ndict test
     ndict = NodeDict()
-    for rr in rrm:
+    t0 = time()
+    for rr in rrm[:5]:
         ndict.accumulate(mod)
-    #print(ndict.namesdistinctness) # slow
+    print(f'NodeDict dt = {time() - t0:.3f} (5 module test)')
+    t0 = time()
+    print(f'NodeDict name distinctness = {ndict.namesdistinctness} dt = {time() - t0:.3f} (5 module test)') # slow computation
 
     # rc test
-    rr2 = dirstream('./ase/optimize/neb.py')
     mv = RecursiveCounter()
-    mv.generic_visit(ast.parse(rr2[0]))
+    t0 = time()
+    mv.generic_visit(ast.parse(rrm[len(rrm) // 3]))
 
     # this isn't the value in Recursive Counter
     mv.postwalk_merge()
+    print(f'RecursiveCounter dt = {time() - t0:.3f} (one module test)')
+    print('-'*72)
     table_report(mv)
+    print('-'*72)
 
     # a distribution of subtree statistics is of value (though it requires a similar merging procedure)
     l = []
@@ -116,4 +135,5 @@ if __name__ == '__main__':
         l.append(mv.n)
         for st in mv.subtrees:
             recur_n(st)
-    print(sorted(l))
+    recur_n(mv)
+    print('distribution of number of ast nodes', sorted(l))
